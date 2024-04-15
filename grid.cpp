@@ -17,39 +17,43 @@
 #include <QtCore/qmath.h>
 #include <QHeaderView>
 
+#include <QDebug>
+
 #include "grid.h"
 #include "window.h"
 #include <iostream>
 using namespace std;
 
 Grid::Grid(QWidget *parent)
-    : QWidget(parent) {
-    
-    //Variable para modificar o llamar funciones de window.cpp
-    window = new Window(this);
+    : QWidget(parent) {        
 
 	//GRID PRINCIPAL
     auto *grid = new QGridLayout(this);
     grid->setVerticalSpacing(15);
     grid->setHorizontalSpacing(10);
     
-    //Layouts divisirios
-    QHBoxLayout *rightLayout = new QHBoxLayout();
-    QHBoxLayout *leftLayout = new QHBoxLayout();   
+    //Variable para modificar o llamar funciones de window.cpp
+    window = new Window(this);
 
 	//Botones
-    btnTest = new QPushButton("Abrir ventana flotante", this);   
+    btnTest = new QPushButton("Ejecutar railway", this);   
+    txtQuery = new QTextEdit("", this);
+    txtQuery->setPlaceholderText("Ingrese una consulta SQL");	
 
-	//Añadir al GRID
-	rightLayout->addWidget(btnTest);
-    grid->addLayout(rightLayout, 0, 0);
-    grid->addLayout(leftLayout, 0, 1);
+	grid->addWidget(window);
 
 	//Añadir el GRID principal a la ventana
     setLayout(grid);
 
 	//Conexión de botones
-    connect(btnTest, &QPushButton::clicked, this, &Grid::openFloatWindow);        
+    connect(btnTest, &QPushButton::clicked, this, &Grid::startRailway); 
+}
+
+void Grid::startRailway() {	
+	QString consulta = txtQuery->toPlainText();
+	txtQuery->setText("");
+	
+	qDebug() << consulta << "\n";
 }
 
 void Grid::openFloatWindow() {
