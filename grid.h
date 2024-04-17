@@ -17,10 +17,10 @@ class Grid : public QWidget {
     private:
     Window *window;
     
-    //Formularios (Inputs, botones, etc)    
-    //QTextEdit* txtQuery;
+    //Formularios (Inputs, botones, etc)    	
     QLineEdit* txtQuery;
-    QPushButton* btnTest;    
+    QLabel* lblQuery;
+    QPushButton* btnTest;
     
     void openFloatWindow();
     void startRailway();

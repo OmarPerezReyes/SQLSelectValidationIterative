@@ -39,10 +39,12 @@ Grid::Grid(QWidget *parent)
     btnTest = new QPushButton("Ejecutar railway", this);
     //txtQuery = new QTextEdit("", this);
     txtQuery = new QLineEdit("", this);
+    lblQuery = new QLabel("Consulta: ", this);
     txtQuery->setPlaceholderText("Ingrese una consulta SQL");	        
     
 	grid->addWidget(txtQuery, 0, 0, 1, 1);
 	grid->addWidget(btnTest, 0, 1, 1, 1);
+	//grid->addWidget(lblQuery, 1, 0, 1, 1);
 	grid->addWidget(window, 1, 0, 6, 4);
 
     setLayout(grid);
@@ -54,7 +56,8 @@ Grid::Grid(QWidget *parent)
 
 void Grid::startRailway() {	
 	//QString consulta = txtQuery->toPlainText();
-	string consulta = txtQuery->text().toStdString();
+	string consulta = txtQuery->text().toStdString();	
+	lblQuery->setText("Consulta: " + txtQuery->text());
 	txtQuery->setText("");
 	
 	//qDebug() << consulta << "\n";

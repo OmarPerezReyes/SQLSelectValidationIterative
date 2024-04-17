@@ -9,6 +9,8 @@
 #include <QAction>
 #include <QCursor>
 #include <QPolygon>
+#include <QMessageBox>
+
 #include <list>
 #include <vector>
 #include <iostream>
@@ -21,7 +23,7 @@ using namespace std;
 // Constructor
 Window::Window(QWidget *parent)
 : QWidget(parent) {
-	
+	error = "";
 	setStatements(statements);
 
 	// new Clause( texto, tipo, orden_railway, x, y)
@@ -177,6 +179,7 @@ Window::Window(QWidget *parent)
 		//FLECHAS DER ->
 		new Arrow(QPoint(20, 660), QPoint(390, 660), 36, 1),
 		new Arrow(QPoint(390, 660), QPoint(650, 660), 32, 1),
+		new Arrow(QPoint(570, 630), QPoint(570, 660), 40, 1)
 	};
 	
 	//Railway - Orden de la consulta
@@ -239,13 +242,22 @@ void Window::doPainting() {
 			}
 		}						
 		drawArrow(painter, a->getStart(), a->getEnd(), a->getPoint());
+	}
+	
+	//Si hay algún error lo imprime por mientras xd
+	if( !isValid && error != "") {
+		cout << error << endl;
+		QMessageBox::information(nullptr, "¡Consulta SELECT no válida!", QString::fromStdString(error) );
+		error = "";
+	}		    
+	
+	if( !changeColor.empty() ) {
+		cout << changeColor.front() << endl;
+		changeColor.pop_front();
 	}	
 	
 	killTimer(timerID);
-	timerID = startTimer(1000);					    
-	
-	if( !changeColor.empty()  )
-		changeColor.pop_front();			   			
+	timerID = startTimer(500);	
 } //Fin función de dibujado
 
 // Repaint de la ventana
@@ -313,7 +325,8 @@ void Window::setStatements( vector<tuple<string,string,int>>& statements ) {
 	string SELECT = "^SELECT";
 	string SELECT_OPT = "\\s+(?:(?:DISTINCT|ALL)\\s+)?";
 	string COLUMNS = "(?:\\*|\\b\\w+\\b(?:,\\s*\\b\\w+\\b)*)";
-	string FROM = "\\sFROM\\s\\w+(\\s\\w+)?";
+	//string FROM = "\\sFROM\\s\\w+(\\s\\w+)?";
+	string FROM = "FROM\\s+\\b(?!SELECT\\b|ALL\\b|DISTINCT\\b|FROM\\b|WHERE\\b|GROUP\\sBY\\b|HAVING\\b|ORDER\\sBY\\b|LIMIT\\b|OFFSET\\b|INNER\\sJOIN\\b|LEFT\\sJOIN\\b|RIGHT\\sJOIN\\b|FULL\\sJOIN\\b|CROSS\\sJOIN\\b|BY\\b|ON\\b|AND\\b|OR\\b|NOT\\b|IN\\b|BETWEEN\\b|LIKE\\b|IS\\b|NULL\\b|AS\\b|ASC\\b|DESC\\b|USING\\b)\\w+(?:\\.\\w+)?\\b";
 	string JOIN = "\\s(JOIN|LEFT\\sJOIN|RIGHT\\sJOIN|FULL\\sJOIN)\\s\\w+\\sON\\s\\w+\\.\\w+\\s=\\s\\w+\\.\\w+";
 	string WHERE = "\\sWHERE\\s\\w+\\s=\\s\\w+";
 	string ORDER_BY = "\\sORDER\\sBY\\s\\w+";
@@ -336,29 +349,52 @@ void Window::setStatements( vector<tuple<string,string,int>>& statements ) {
 
 list<int> Window::returnRailway(const string& consulta, vector<tuple<string,string,int>>& statements) {
 	//Posible railway de la consulta
-    list<int> railway;
+    list<int> railway;   
     
 	//Busca cada parte del SELECT
     for (vector<tuple<string, string, int>>::iterator it = statements.begin(); it != statements.end();) {
-		regex expresion(get<0>(*it)); 		
+		regex expresion(get<0>(*it)); 
 		
-		if( get<1>(*it) == "SELECT" ) {
-			regex select_("^SELECT");
-		    if(!regex_search(consulta, select_))
-				return railway;
+		regex select_("^SELECT");
+		if(!regex_search(consulta, select_)) {
+			railway.push_back(0);
+			railway.push_back(1);
+			error = "¡La consulta debe empezar por un SELECT!";
+			return railway;
+		}			
+		
+		//regex from_("\\sFROM\\s\\w+(\\s\\w+)?");
+		regex from_("FROM\\s+\\b(?!SELECT\\b|ALL\\b|DISTINCT\\b|FROM\\b|WHERE\\b|GROUP\\sBY\\b|HAVING\\b|ORDER\\sBY\\b|LIMIT\\b|OFFSET\\b|INNER\\sJOIN\\b|LEFT\\sJOIN\\b|RIGHT\\sJOIN\\b|FULL\\sJOIN\\b|CROSS\\sJOIN\\b|BY\\b|ON\\b|AND\\b|OR\\b|NOT\\b|IN\\b|BETWEEN\\b|LIKE\\b|IS\\b|NULL\\b|AS\\b|ASC\\b|DESC\\b|USING\\b)\\w+(?:\\.\\w+)?\\b");
+		if(!regex_search(consulta, from_)) {
+			railway.push_back(0);
+			railway.push_back(1);
+			railway.push_back(2);
+			error = "¡Falta seleccionar la TABLA en el FROM (FROM table_name) o la tabla es una palabra reservada de SQL!";
+			return railway;
 		}
-				
-		if( get<1>(*it) == "FROM" ) {
-			regex from_("FROM\\s\\w+(\\s\\w+)?");
-			if(!regex_search(consulta, from_))
-				return railway;
-		}		
 		
 		// Buscar si hay alguna coincidencia de cada PARAMETRO del SELECT
 		if (!regex_search(consulta, expresion))
 		    it = statements.erase(it);
 		else {
 			//cout << get<1>(*it) << endl;
+			
+			regex opt("ORDER\\sBY");
+			if( get<1>(*it) == "WHERE" ) {				
+				if( !regex_search(consulta, opt) ) {
+					railway.push_back(34);
+				}
+			} else if( get<1>(*it) == "ORDER_BY" ) {
+				opt = regex("LIMIT");
+				if( !regex_search(consulta, opt) ) {
+					railway.push_back(35);
+				}
+			} else if( get<1>(*it) == "GROUP_BY" ) {
+				opt = regex("GROUP\\sBY");
+				if( !regex_search(consulta, opt) ) {
+					railway.push_back(36);
+				}
+			}			
 			
 			//Si la consulta tiene DISTINCT o ALL
 			if( get<1>(*it) == "SELECT_OPT" ) {
@@ -395,7 +431,7 @@ list<int> Window::returnRailway(const string& consulta, vector<tuple<string,stri
 			//Si la consulta tiene DISTINCT o ALL
 			if( get<1>(*it) == "LIMIT-OFFSET" ) {
 				//IDENTIFICAR PARAMETRO
-				regex select_opts("OFFSET");
+				regex select_opts("OFFSET\\s\\b\\d+\\b");
 				int CASE = 0;				
 				if( regex_search(consulta, select_opts) ) CASE = 1;				
 
@@ -409,6 +445,29 @@ list<int> Window::returnRailway(const string& consulta, vector<tuple<string,stri
 					default: // ALL
 						railway.push_back(25);
 						railway.push_back(26);
+						break;
+				} //Fin switch
+				it++;
+				continue;
+			} //Fin if
+			
+			//Si la consulta tiene DISTINCT o ALL
+			if( get<1>(*it) == "GROUP_BY" ) {
+				//IDENTIFICAR PARAMETRO
+				regex select_opts("HAVING\\s(?:COUNT\\(\\w+\\)\\s(?:=|>|<|!=|<>)\\s\\d+\\b|AVG\\(\\w+\\)\\s(?:=|>|<|!=|<>)\\s\\d+\\b|SUM\\(\\w+\\)\\s(?:=|>|<|!=|<>)\\s\\d+\\b|MAX\\(\\w+\\)\\s(?:=|>|<|!=|<>)\\s\\d+\\b|MIN\\(\\w+\\)\\s(?:=|>|<|!=|<>)\\s\\d+\\b|LENGTH\\(\\w+\\)\\s(?:=|>|<|!=|<>)\\s\\d+\\b)?");
+				int CASE = 0;				
+				if( regex_search(consulta, select_opts) ) CASE = 1;				
+
+				railway.push_back(28);
+				railway.push_back(29);				
+				switch( CASE ) {
+					case 1:
+						railway.push_back(30);
+						railway.push_back(40);
+						break;
+					default:
+						railway.push_back(31);
+						railway.push_back(32);
 						break;
 				} //Fin switch
 				it++;
@@ -464,6 +523,7 @@ bool Window::validateQuery(const string& consulta, vector<tuple<string, string, 
 } // Fin validarConsulta()
 
 void Window::checkQuery(string query) {
+	changeColor.clear();
 	changeColor = returnRailway(query, statements);
 	isValid = validateQuery(query, statements);
 }

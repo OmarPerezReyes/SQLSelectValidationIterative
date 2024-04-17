@@ -38,6 +38,7 @@ class Window : public QWidget {
     	QRect txt;
     	bool isValid;
     	vector<tuple<string, string, int>> statements;    	
+    	string error;
     	
     	//Metodos Window
     	void doPainting();
