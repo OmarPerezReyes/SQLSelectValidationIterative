@@ -18,7 +18,8 @@ class Grid : public QWidget {
     Window *window;
     
     //Formularios (Inputs, botones, etc)    
-    QTextEdit* txtQuery;
+    //QTextEdit* txtQuery;
+    QLineEdit* txtQuery;
     QPushButton* btnTest;    
     
     void openFloatWindow();

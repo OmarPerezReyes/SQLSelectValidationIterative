@@ -33,27 +33,33 @@ Grid::Grid(QWidget *parent)
     grid->setHorizontalSpacing(10);
     
     //Variable para modificar o llamar funciones de window.cpp
-    window = new Window(this);
+    window = new Window(this);   
 
 	//Botones
-    btnTest = new QPushButton("Ejecutar railway", this);   
-    txtQuery = new QTextEdit("", this);
-    txtQuery->setPlaceholderText("Ingrese una consulta SQL");	
+    btnTest = new QPushButton("Ejecutar railway", this);
+    //txtQuery = new QTextEdit("", this);
+    txtQuery = new QLineEdit("", this);
+    txtQuery->setPlaceholderText("Ingrese una consulta SQL");	        
+    
+	grid->addWidget(txtQuery, 0, 0, 1, 1);
+	grid->addWidget(btnTest, 0, 1, 1, 1);
+	grid->addWidget(window, 1, 0, 6, 4);
 
-	grid->addWidget(window);
-
-	//Añadir el GRID principal a la ventana
     setLayout(grid);
 
 	//Conexión de botones
     connect(btnTest, &QPushButton::clicked, this, &Grid::startRailway); 
+    	
 }
 
 void Grid::startRailway() {	
-	QString consulta = txtQuery->toPlainText();
+	//QString consulta = txtQuery->toPlainText();
+	string consulta = txtQuery->text().toStdString();
 	txtQuery->setText("");
 	
-	qDebug() << consulta << "\n";
+	//qDebug() << consulta << "\n";
+	
+	window->checkQuery(consulta);
 }
 
 void Grid::openFloatWindow() {

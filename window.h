@@ -3,11 +3,14 @@
 #include <QWidget>
 #include <QRect>
 #include <QMenu>
+#include <QString>
+#include <string>
 #include <list>
 #include <tuple>
-
+#include <vector>
 #include "clause.h"
 #include "arrow.h"
+using namespace std;
 
 class Window : public QWidget {
 
@@ -15,10 +18,16 @@ class Window : public QWidget {
         Window(QWidget *parent = 0);
         ~Window();
         void mousePressEvent(QMouseEvent* event);
+        //Devuelve el railway o camino de la consulta
+		list<int> returnRailway(const string& consulta, vector<tuple<string,string,int>>& statements);
+		//Validar si la consulta es valida
+		bool validateQuery(const string& consulta, vector<tuple<string,string,int>> statements);
+		void setStatements(vector<tuple<string,string,int>>& statements);
+		void checkQuery(string query);
 
     protected:
         void paintEvent(QPaintEvent *event);
-        void timerEvent(QTimerEvent *event);
+        void timerEvent(QTimerEvent *event);        
 
     private:
     	std::list<Clause*> clauses;
@@ -27,6 +36,8 @@ class Window : public QWidget {
     	//Atributos
     	int timerID;
     	QRect txt;
+    	bool isValid;
+    	vector<tuple<string, string, int>> statements;    	
     	
     	//Metodos Window
     	void doPainting();
